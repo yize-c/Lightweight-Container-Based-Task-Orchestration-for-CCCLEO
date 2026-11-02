@@ -80,9 +80,51 @@ curl http://localhost:8080/jobs/<job-id>    # one job
 | POST   | /workers/register     | worker announces itself (+ callback_url for push) |
 | GET    | /workers              | list registered workers                    |
 | GET    | /poll?worker_id=X     | pull-mode: worker asks for next job        |
+| GET    | /metrics              | aggregate metrics (see below)              |
 
 Job spec fields: `image`, `command` (optional override), `env` (optional),
 `node_target` (optional — pin to one worker), `max_retries`.
+
+## Metrics
+
+`GET /metrics` returns the numbers the proposal's research questions
+ask for, computed live from the job list — no separate time-series
+store needed for a demo this size:
+
+```json
+{
+  "total_jobs": 2,
+  "pending": 0, "running": 0, "succeeded": 1, "failed": 1,
+  "completion_rate": 0.5,
+  "avg_scheduling_delay_ms": 428.4,
+  "avg_total_latency_ms": 1462.9,
+  "stale_reports_ignored": 0
+}
+```
+
+- **completion_rate** — succeeded / total jobs
+- **avg_scheduling_delay_ms** — mean time between a job being submitted
+  (`created_at`) and a worker actually claiming/receiving it
+  (`assigned_at`). This is the main pull-vs-push number: run the same
+  batch of jobs once with `-mode=pull` and once with `-mode=push` under a
+  `tc/netem` profile and compare this value.
+- **avg_total_latency_ms** — mean time from submission to finish
+  (success or final failure).
+- **stale_reports_ignored** — how many times the duplicate-execution
+  guard actually fired (a status report arrived for a job that had
+  already succeeded or been reassigned). Useful evidence for the
+  "how is duplicate execution prevented" question — watch this counter
+  go up when you kill and restart a worker mid-job.
+
+(CPU/memory sampling was cut on purpose — it needed a bigger chunk of
+worker code (detached containers, a polling loop, parsing `docker stats`
+output) for numbers that mostly read as 0 on short test jobs anyway.
+Not worth the extra surface to explain for a course project at this scope.)
+
+Per-job values (`assigned_at`, `finished_at`) are also on each job from
+`GET /jobs/{id}`, so you can compute your own aggregates (e.g.
+percentiles) from the raw list via `GET /jobs` if the summary isn't
+enough for the report.
 
 ## How duplicate execution is avoided
 
@@ -107,11 +149,13 @@ reconnect recovery between `-mode=pull` and `-mode=push` runs.
   only talks to the controller directly. Per the proposal's risk section,
   if Azure access is awkward to set up in time, the local REST registration
   path (what's built now) is the fallback and is already in place.
-- **Power BI dashboard** — optional per the proposal; `GET /jobs` and
-  `GET /workers` return the JSON a dashboard would consume, but nothing
-  renders it yet.
+- **Power BI dashboard** — optional per the proposal; `GET /jobs`,
+  `GET /workers`, and the new `GET /metrics` return the JSON a dashboard
+  would consume, but nothing renders it visually yet.
 - **K3s comparison** — not started.
-- **tc/netem experiment harness** — not started (see above).
+- **tc/netem experiment harness** — not started (see above); `/metrics`
+  is ready to be read by that harness once it exists.
+- **Project website** — not started.
 
 ## Suggested midterm demo script
 

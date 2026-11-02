@@ -65,7 +65,7 @@ type Worker struct {
 }
 
 func (w *Worker) register(callbackURL string) error {
-	body, _ := json.Marshal(job.RegisterRequest{WorkerID: w.ID, Labels: map[string]string{}})
+	body, _ := json.Marshal(job.RegisterRequest{WorkerID: w.ID})
 	url := w.ControllerURL + "/workers/register"
 	if callbackURL != "" {
 		url += "?callback_url=" + callbackURL
@@ -119,11 +119,13 @@ func (w *Worker) poll() (*job.Job, error) {
 	return &j, nil
 }
 
-// runJob executes the job as a Docker container and reports status back
-// at each transition (running -> succeeded/failed).
+// runJob runs the job as a single foreground Docker container and
+// reports the final result back once it finishes. Kept deliberately
+// simple: one command, wait for it, read the output — the controller
+// already knows this job is "running" the moment it handed it out, so
+// there's no separate "I started" report to send.
 func (w *Worker) runJob(j *job.Job) {
 	log.Printf("running job %s (image=%s attempt=%d)", j.ID, j.Spec.Image, j.Attempts)
-	w.reportStatus(j.ID, job.StatusRunning, "")
 
 	args := []string{"run", "--rm"}
 	for k, v := range j.Spec.Env {

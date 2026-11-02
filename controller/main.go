@@ -44,6 +44,7 @@ func main() {
 	mux.HandleFunc("POST /workers/register", handleRegisterWorker)
 	mux.HandleFunc("GET /workers", handleListWorkers)
 	mux.HandleFunc("GET /poll", handlePoll) // pull mode: worker asks "got anything for me?"
+	mux.HandleFunc("GET /metrics", handleMetrics)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
@@ -117,9 +118,13 @@ func handleRegisterWorker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	callback := r.URL.Query().Get("callback_url")
-	store.RegisterWorker(WorkerInfo{ID: req.WorkerID, Labels: req.Labels, CallbackURL: callback})
-	log.Printf("registered worker=%s callback=%q labels=%v", req.WorkerID, callback, req.Labels)
+	store.RegisterWorker(WorkerInfo{ID: req.WorkerID, CallbackURL: callback})
+	log.Printf("registered worker=%s callback=%q", req.WorkerID, callback)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "registered", "mode": mode})
+}
+
+func handleMetrics(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, store.Metrics())
 }
 
 func handleListWorkers(w http.ResponseWriter, r *http.Request) {
@@ -157,9 +162,8 @@ func pushSchedulerLoop() {
 		if len(workers) == 0 {
 			continue
 		}
-		wi := 0
 		for _, j := range pending {
-			w := pickWorker(workers, j.Spec.NodeTarget, &wi)
+			w := pickWorker(workers, j.Spec.NodeTarget)
 			if w == nil || w.CallbackURL == "" {
 				continue
 			}
@@ -169,7 +173,11 @@ func pushSchedulerLoop() {
 	}
 }
 
-func pickWorker(workers []*WorkerInfo, target string, rr *int) *WorkerInfo {
+// pickWorker picks a worker for a job: the pinned NodeTarget if the spec
+// names one, otherwise simply the first registered worker. (Not load
+// balanced across workers — kept simple on purpose; the research
+// question here is push vs pull, not load-balancing strategy.)
+func pickWorker(workers []*WorkerInfo, target string) *WorkerInfo {
 	if target != "" {
 		for _, w := range workers {
 			if w.ID == target {
@@ -178,8 +186,7 @@ func pickWorker(workers []*WorkerInfo, target string, rr *int) *WorkerInfo {
 		}
 		return nil
 	}
-	*rr = (*rr + 1) % len(workers)
-	return workers[*rr]
+	return workers[0]
 }
 
 func pushJobToWorker(callbackURL string, j *job.Job) {

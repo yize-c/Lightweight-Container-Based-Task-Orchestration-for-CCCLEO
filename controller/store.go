@@ -12,16 +12,16 @@ import (
 // IDs plus status tracking are what prevent duplicate execution after a
 // worker reconnects.
 type Store struct {
-	mu      sync.Mutex
-	jobs    map[string]*job.Job
-	workers map[string]*WorkerInfo
+	mu           sync.Mutex
+	jobs         map[string]*job.Job
+	workers      map[string]*WorkerInfo
+	staleReports int // duplicate-execution guard hit count, for metrics
 }
 
 // WorkerInfo tracks a registered worker. CallbackURL is only used in push
 // mode (worker runs its own tiny HTTP server the controller can POST to).
 type WorkerInfo struct {
 	ID          string
-	Labels      map[string]string
 	CallbackURL string
 	LastSeen    time.Time
 }
@@ -67,7 +67,7 @@ func (s *Store) ListJobs() []*job.Job {
 
 // ClaimNextPending is used by pull-mode polling: it atomically finds the
 // first pending job eligible for workerID (matching NodeTarget, or no
-// target set) and marks it assigned so no other poll can also claim it.
+// target set) and marks it running so no other poll can also claim it.
 func (s *Store) ClaimNextPending(workerID string) *job.Job {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -78,21 +78,26 @@ func (s *Store) ClaimNextPending(workerID string) *job.Job {
 		if j.Spec.NodeTarget != "" && j.Spec.NodeTarget != workerID {
 			continue
 		}
-		j.Status = job.StatusAssigned
+		j.Status = job.StatusRunning
 		j.AssignedTo = workerID
 		j.Attempts++
-		j.UpdatedAt = time.Now()
+		now := time.Now()
+		j.UpdatedAt = now
+		if j.AssignedAt == nil {
+			j.AssignedAt = &now
+		}
 		return j
 	}
 	return nil
 }
 
-// ApplyStatus updates a job from a worker's status report. If the job
-// failed and retries remain, it is reset to pending so it can be
-// re-claimed (by pull) or re-pushed (by push). Reports for a job that is
-// no longer in-flight (already succeeded, or reassigned elsewhere) are
-// ignored rather than overwriting a result — this is the duplicate-
-// execution guard after a worker reconnects late.
+// ApplyStatus updates a job from a worker's final status report
+// (succeeded or failed — there's no separate "started running" report
+// to handle). If it failed and retries remain, it's reset to pending so
+// it can be re-claimed (by pull) or re-pushed (by push). A report for a
+// job that is no longer in-flight (already succeeded, or reassigned to
+// a different worker) is ignored rather than overwriting the result —
+// this is the duplicate-execution guard after a worker reconnects late.
 func (s *Store) ApplyStatus(r job.StatusReport) (*job.Job, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -100,22 +105,22 @@ func (s *Store) ApplyStatus(r job.StatusReport) (*job.Job, bool) {
 	if !ok {
 		return nil, false
 	}
-	// Stale report from a worker that no longer owns this job attempt.
 	if j.Status == job.StatusSucceeded {
+		s.staleReports++
 		return j, true
 	}
-	if j.AssignedTo != "" && j.AssignedTo != r.WorkerID && r.Status != job.StatusFailed {
+	if j.AssignedTo != "" && j.AssignedTo != r.WorkerID {
+		s.staleReports++
 		return j, true
 	}
 
-	j.UpdatedAt = time.Now()
+	now := time.Now()
+	j.UpdatedAt = now
 	switch r.Status {
-	case job.StatusRunning:
-		j.Status = job.StatusRunning
-		j.AssignedTo = r.WorkerID
 	case job.StatusSucceeded:
 		j.Status = job.StatusSucceeded
 		j.Result = r.Result
+		j.FinishedAt = &now
 	case job.StatusFailed:
 		j.Result = r.Result
 		if j.Attempts < j.Spec.MaxRetries {
@@ -124,9 +129,55 @@ func (s *Store) ApplyStatus(r job.StatusReport) (*job.Job, bool) {
 			j.AssignedTo = ""
 		} else {
 			j.Status = job.StatusFailed
+			j.FinishedAt = &now
 		}
 	}
 	return j, true
+}
+
+// Metrics computes the aggregate stats the proposal's research questions
+// need, straight from the job list — no separate time-series store.
+func (s *Store) Metrics() job.Metrics {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var m job.Metrics
+	m.TotalJobs = len(s.jobs)
+	m.StaleReportsIgnored = s.staleReports
+
+	var schedSum, totalSum float64
+	var schedN, totalN int
+
+	for _, j := range s.jobs {
+		switch j.Status {
+		case job.StatusPending:
+			m.Pending++
+		case job.StatusRunning:
+			m.Running++
+		case job.StatusSucceeded:
+			m.Succeeded++
+		case job.StatusFailed:
+			m.Failed++
+		}
+		if j.AssignedAt != nil {
+			schedSum += j.AssignedAt.Sub(j.CreatedAt).Seconds() * 1000
+			schedN++
+		}
+		if j.FinishedAt != nil {
+			totalSum += j.FinishedAt.Sub(j.CreatedAt).Seconds() * 1000
+			totalN++
+		}
+	}
+	if m.TotalJobs > 0 {
+		m.CompletionRate = float64(m.Succeeded) / float64(m.TotalJobs)
+	}
+	if schedN > 0 {
+		m.AvgSchedulingDelayMs = schedSum / float64(schedN)
+	}
+	if totalN > 0 {
+		m.AvgTotalLatencyMs = totalSum / float64(totalN)
+	}
+	return m
 }
 
 func (s *Store) RegisterWorker(w WorkerInfo) {
@@ -164,9 +215,13 @@ func (s *Store) MarkAssigned(jobID, workerID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if j, ok := s.jobs[jobID]; ok && j.Status == job.StatusPending {
-		j.Status = job.StatusAssigned
+		j.Status = job.StatusRunning
 		j.AssignedTo = workerID
 		j.Attempts++
-		j.UpdatedAt = time.Now()
+		now := time.Now()
+		j.UpdatedAt = now
+		if j.AssignedAt == nil {
+			j.AssignedAt = &now
+		}
 	}
 }
