@@ -64,5 +64,9 @@ See `ApplyStatus` in `controller/store.go`.
 
 ## Not built yet
 
-Azure IoT Hub, Power BI dashboard, tc/netem network simulation, K3s
-comparison, project website.
+Azure IoT Hub, Power BI dashboard, K3s comparison, project website.
+
+## Experiments
+
+Push vs pull under emulated network conditions (tc/netem): see
+[experiments/README.md](experiments/README.md).

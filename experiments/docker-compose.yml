@@ -1,0 +1,30 @@
+# Emulated testbed: 1 controller + 1 worker, each in its own container.
+# tc/netem is applied to worker1's network interface (its "link").
+# MODE (pull|push) is set by run.sh.
+services:
+  controller:
+    build: { context: .., dockerfile: Dockerfile }
+    image: cccleo-node:local
+    command: ["controller"]
+    environment:
+      - MODE=${MODE:-pull}
+    ports:
+      - "8080:8080"
+
+  worker1:
+    build: { context: .., dockerfile: Dockerfile }
+    image: cccleo-node:local
+    command:
+      - worker
+      - -id=w1
+      - -controller=http://controller:8080
+      - -mode=${MODE:-pull}
+      - -addr=:9001
+      - -callback-host=worker1
+    cap_add:
+      - NET_ADMIN            # allows tc and iptables inside this container
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock   # run jobs on host Docker
+    depends_on:
+      - controller
+    restart: on-failure      # retry if it starts before the controller is up

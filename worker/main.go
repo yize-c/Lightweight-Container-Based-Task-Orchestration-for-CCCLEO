@@ -27,13 +27,17 @@ func main() {
 	mode := flag.String("mode", "pull", "pull | push")
 	addr := flag.String("addr", ":9001", "address this worker listens on (push mode only)")
 	pollInterval := flag.Duration("poll-interval", 2*time.Second, "how often to poll in pull mode")
+	// Hostname the controller uses to reach this worker in push mode.
+	// "localhost" works when everything runs on one machine; in Docker each
+	// worker is its own host, so pass its container name (e.g. worker1).
+	callbackHost := flag.String("callback-host", "localhost", "hostname the controller uses to reach this worker (push mode only)")
 	flag.Parse()
 
 	w := &Worker{ID: *id, ControllerURL: *controllerURL}
 
 	callback := ""
 	if *mode == "push" {
-		callback = fmt.Sprintf("http://localhost%s/run", *addr)
+		callback = fmt.Sprintf("http://%s%s/run", *callbackHost, *addr)
 	}
 	if err := w.register(callback); err != nil {
 		log.Fatalf("register failed: %v", err)
