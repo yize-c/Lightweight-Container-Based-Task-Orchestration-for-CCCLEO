@@ -1,72 +1,59 @@
 # Lightweight Container-Based Task Orchestration for CCCLEO
 
-Go controller + worker agent that run jobs as Docker containers. CSC 579
-course project.
+**A course project for CSC 579 (Fall 2026) @ UVic**
+by Yi-Ze Chen
 
-## Files
+**Home** · [Logbook](docs/logbook.md) · [Project Proposal](docs/proposal.md) · [Project Updates](docs/updates.md) · [Demo & Presentation](docs/demo.md) · [Project Report](docs/report.md) · [Code](docs/code.md)
 
-```
-pkg/job/        job schema (shared types)
-controller/     REST API + job store + pull/push scheduling
-worker/         runs jobs via docker, pull mode or push mode
-testimg/        tiny test image, no registry needed
-```
+*Last updated: November 14, 2026*
 
-## Run it
+---
 
-```bash
-# 1. build the test image (once)
-cd testimg
-CGO_ENABLED=0 GOOS=linux go build -o testjob main.go
-docker build -t cccleo-testjob:local .
+## Project topic
 
-# 2. start the controller
-cd ../controller
-go run . -mode=pull     # or -mode=push
+The [CCCLEO testbed](https://onlineacademiccommunity.uvic.ca/cccleo/)
+links computers across Canada over a low-Earth-orbit satellite network.
+Its nodes range from VMs to small ARM devices, and its links can be slow,
+lossy, or briefly cut off. Full orchestrators such as Kubernetes or K3s
+are heavy for a testbed like this.
 
-# 3. start a worker
-cd ../worker
-go run . -id=w1 -controller=http://localhost:8080 -mode=pull
+This project builds a small Go controller and worker agent that run
+tasks as Docker containers, and compares two ways of handing out work:
 
-# 4. submit a job
-curl -X POST http://localhost:8080/jobs -d '{"image":"cccleo-testjob:local","max_retries":2}'
+- **Push**: the controller sends each job to a worker.
+- **Pull**: each worker asks the controller for work every few seconds.
 
-# 5. check it
-curl http://localhost:8080/jobs
-```
+## Research question
 
-## API
+How do push and pull scheduling compare in **latency** and **task
+completion** when the network gets worse (added delay, packet loss,
+temporary outages)?
 
-| Method | Path | Does |
-|---|---|---|
-| POST | /jobs | submit a job |
-| GET | /jobs | list jobs |
-| GET | /jobs/{id} | one job |
-| POST | /jobs/{id}/status | worker reports result |
-| POST | /workers/register | worker announces itself |
-| GET | /poll?worker_id=X | pull mode: worker asks for work |
-| GET | /metrics | numbers below |
+## Approach
 
-Job fields: `image`, `command`, `env`, `node_target`, `max_retries`.
+Two methods, checked against each other:
 
-## Metrics (`GET /metrics`)
+1. **Emulation + measurement**: controller and worker run in separate
+   containers; Linux `tc/netem` degrades the worker's link; the same
+   workload runs under 10 network profiles in both modes.
+2. **Analytical model**: simple formulas predict the latency of each
+   mode; the predictions are compared with the measurements.
 
-- `completion_rate` — succeeded / total
-- `avg_scheduling_delay_ms` — submit → worker picks it up. **This is the pull vs push number.**
-- `avg_total_latency_ms` — submit → finished
-- `stale_reports_ignored` — duplicate-execution guard caught something
+## Project info
 
-## How it avoids running a job twice
+| | |
+|---|---|
+| Student | Yi-Ze Chen |
+| Course | CSC 579, Fall 2026, University of Victoria |
+| Current phase | Experiments and analysis (Nov 10 – 23) |
+| Final presentation | December 4, 2026 |
+| Final report | December 14, 2026 |
+| Source code | this repository ([how to run](docs/code.md)) |
 
-Each job has a unique ID and one status. Once a worker has it
-(`running`), a report from any other worker for that job is ignored.
-See `ApplyStatus` in `controller/store.go`.
+## Latest news
 
-## Not built yet
-
-Azure IoT Hub, Power BI dashboard, K3s comparison, project website.
-
-## Experiments
-
-Push vs pull under emulated network conditions (tc/netem): see
-[experiments/README.md](experiments/README.md).
+- **Nov 14** — Network emulation experiments done; the model predicted
+  where pull catches up with push (~1 s of extra round-trip time), and
+  the experiment confirmed it. See [Update 3](docs/updates.md#update-3--nov-16-2026).
+- **Nov 2** — Controller/worker prototype working end to end.
+- **Oct 9** — [Project proposal](docs/proposal.md) submitted.
