@@ -43,12 +43,35 @@ caching, K3s), make charts, start the report.
 
 ## Update 2 — Nov 5, 2026
 
-- Prototype tested end to end with screenshots: jobs submitted through
-  the REST API, run as containers, results reported back
-- Simplified the code so every part is easy to explain
-- [Update 2 (PDF)](files/update2.pdf)
+**Done since Update 1:** the worker agent, with pull mode (polls the controller) and push mode (receives jobs). One controller and one worker run on a Windows laptop with Docker Desktop; jobs use a small local test image.
+
+- **Pull mode runs jobs:** a worker started after two jobs were pending picked up both and finished them; the controller shows them as succeeded.
+- **Failed jobs are retried:** a job with a missing image and `max_retries: 2` was tried twice, then marked failed.
+- **First pull vs push numbers** (5 jobs, 1 worker, no network problems):
+
+| Metric | Pull | Push |
+|---|---|---|
+| Jobs completed | 5/5 | 5/5 |
+| Avg scheduling delay | 2850 ms | 474 ms |
+| Avg total latency | 4134 ms | 2344 ms |
+
+Push was faster, but the test was not yet fair: the pull worker runs one job at a time, while push ran all five at once, and the network was perfect.
+
+**Next:** make the modes comparable, add delay, loss and outages with `tc/netem`.
+
+[Update 2 (PDF)](files/update2.pdf)
 
 ## Update 1 — Oct 22, 2026
 
-- Project plan in my own words and first progress
-- [Update 1 (PDF)](files/update1.pdf)
+**Goal:** a small controller/worker system that runs jobs as Docker containers, to test whether pulling tasks copes with bad links better than pushing them. This update covers the controller.
+
+- **Job format:** five fields — `image`, `command`, `env`, `node_target`, `max_retries` — much smaller than a Kubernetes spec.
+- **Controller in Go:** standard library only, jobs kept in memory, a REST API to submit jobs, register workers, poll for work, report results and read metrics.
+- **Job life cycle:** each job has a unique ID and moves through pending, running, succeeded or failed; a failed job is retried until it runs out of retries.
+- **No duplicate runs:** once a job is given to a worker, a result from any other worker is ignored and counted.
+- **Two scheduling modes:** in pull mode the controller waits for workers to ask; in push mode it sends pending jobs every second.
+- **Demo:** with no worker running, two submitted jobs stay pending, each with its own ID.
+
+**Next:** the worker agent, first end-to-end tests, a metrics endpoint.
+
+[Update 1 (PDF)](files/update1.pdf)
