@@ -34,9 +34,8 @@ these conditions.
 
 ## Planned tools
 
-Go, Docker, REST/HTTP, Linux `tc/netem`, K3s (baseline), Azure IoT Hub
-(device management), Jira (Scrum, two-week sprints), Python/Power BI
-(charts, optional).
+Go, Docker, REST/HTTP, Linux `tc/netem`, K3s (baseline), Power BI
+(charts).
 
 ## Timeline (revised Nov 14, 2026)
 
