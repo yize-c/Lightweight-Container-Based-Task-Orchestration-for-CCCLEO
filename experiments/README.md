@@ -31,6 +31,7 @@ Final numbers: `REPS=3 ./run.sh` (3 repetitions, ~2 h).
 |---|---|---|
 | base | delay 0ms | clean link (also measures fixed cost R) |
 | d50 / d200 / d600 | delay 50/200/600ms | extra round-trip time (LEO-like to GEO-like) |
+| d1000 / d1500 | delay 1000/1500ms | very high delay; run separately: `REPS=3 PROFILES="d1000" ./run.sh`, `GAP=8 REPS=3 PROFILES="d1500" ./run.sh` |
 | l1 / l5 / l10 | loss 1/5/10% | packet loss on the worker's outgoing traffic |
 | out | loss 100% + iptables DROP, 10 s every 40 s | intermittent link, both directions |
 
