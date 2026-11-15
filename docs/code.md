@@ -67,7 +67,7 @@ See `ApplyStatus` in [`controller/store.go`](../controller/store.go).
 
 ## Not built yet
 
-Azure IoT Hub, image caching experiment, K3s comparison, Power BI dashboard.
+Image caching experiment, K3s comparison, Power BI dashboard.
 
 ## Experiments
 
