@@ -1,1 +1,1 @@
-{"total_jobs":30,"pending":0,"running":1,"succeeded":29,"failed":0,"completion_rate":0.9666666666666667,"avg_scheduling_delay_ms":572.766778,"avg_total_latency_ms":3691.922756103449,"stale_reports_ignored":0}
+{"total_jobs":30,"pending":0,"running":1,"succeeded":29,"failed":0,"completion_rate":0.9666666666666667,"avg_scheduling_delay_ms":528.8982732333333,"avg_total_latency_ms":3425.966450724138,"stale_reports_ignored":0}
