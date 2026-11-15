@@ -21,7 +21,7 @@
 
 **Week of Nov 2, 2026**
 - Simplified the code: removed CPU/memory sampling and worker labels, merged the "assigned" state into "running"
-- First informal push vs pull test: push 406 ms vs pull 4572 ms scheduling delay (later found to be mostly queueing, not network)
+- First pull vs push test (5 jobs, 1 worker): push 474 ms vs pull 2850 ms scheduling delay (not yet a fair comparison: pull ran one job at a time, push ran all at once)
 - Submitted Project Update 2 (Nov 5)
 
 **Week of Nov 9, 2026**
