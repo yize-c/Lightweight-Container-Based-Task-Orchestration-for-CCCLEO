@@ -32,7 +32,7 @@ these conditions.
   them with Docker, reports results
 - Jobs have unique IDs so a job is never counted as run twice
 
-## Planned tools
+## Tools (revised Nov 14, 2026)
 
 Go, Docker, REST/HTTP, Linux `tc/netem`, K3s (baseline), Power BI
 (charts).
