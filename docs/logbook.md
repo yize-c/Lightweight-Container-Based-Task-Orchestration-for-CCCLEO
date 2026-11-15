@@ -33,5 +33,4 @@
 - Repeated every run 3 times for final numbers; results held (tie at 1000 ms, pull faster at 1500 ms)
 
 **Next**
-- Project Update 3 (Nov 16)
 - Final presentation video (Dec 4), report (Dec 14), website final (Dec 21)
