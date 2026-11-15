@@ -23,4 +23,4 @@
 
 Raw data and the summary table are in
 [experiments/results/](../experiments/results/). Main findings are in
-[Update 3](updates.md#update-3--nov-16-2026).
+[Midterm Update](updates.md#update-3--nov-16-2026).
