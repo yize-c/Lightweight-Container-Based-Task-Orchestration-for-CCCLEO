@@ -4,7 +4,7 @@
 
 ---
 
-## Update 3 — Nov 16, 2026
+## Midterm Update — Nov 16, 2026
 
 **Done since Update 2**
 - Experiment setup: controller and worker each run in their own Docker
