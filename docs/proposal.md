@@ -38,16 +38,19 @@ Go, Docker, REST/HTTP, Linux `tc/netem`, K3s (baseline), Azure IoT Hub
 (device management), Jira (Scrum, two-week sprints), Python/Power BI
 (charts, optional).
 
-## Timeline
+## Timeline (revised Nov 14, 2026)
 
-| Period | Milestone |
-|---|---|
-| Oct 13–19 | Job schema, REST API, metrics, test VMs |
-| Oct 20–26 | Controller, job store, worker registration |
-| Oct 27–Nov 9 | Worker agent, push/pull scheduling, midterm demo |
-| Nov 10–16 | Azure IoT Hub, reconnection recovery |
-| Nov 17–23 | Network emulation and image caching experiments |
-| Nov 24–end | Analysis, presentation, report, website |
+| Period | Milestone | Status |
+|---|---|---|
+| Oct 13–26 | Job schema, REST API, controller, job store, worker registration | Done |
+| Oct 27–Nov 9 | Worker agent, push/pull scheduling, end-to-end testing | Done |
+| Nov 10–16 | Network emulation with `tc/netem`, push vs pull experiments (3 runs each), analytical model | Done |
+| Nov 17–23 | Power BI charts of the results; image caching / K3s comparison if time allows | Planned |
+| Nov 24–Dec 4 | Final presentation video (due Dec 4) | Planned |
+| Dec 5–14 | Final report (due Dec 14) | Planned |
+| Dec 15–21 | Website finalized (due Dec 21) | Planned |
+
+**Changes from the original plan:** Azure IoT Hub and Jira were dropped to focus on the experiments; Docker containers replaced VMs for the emulated testbed; Power BI is now used for the result charts. Image caching and the K3s comparison are optional.
 
 **Priority if time is short:** the working prototype and push/pull
 experiments come first; hybrid scheduling, a web frontend and Power BI
