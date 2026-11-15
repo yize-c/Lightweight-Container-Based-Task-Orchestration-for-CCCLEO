@@ -38,8 +38,7 @@
   96% (4 of 90 jobs lost, because a failed push is never re-sent)
 - **Packet loss** up to 10% changed little (at most ~230 ms)
 
-**Next:** decide on remaining proposal items (Azure IoT Hub, image
-caching, K3s), make charts, start the report.
+**Next:** Power BI charts of the results; image caching / K3s comparison if time allows; start the report.
 
 ## Update 2 — Nov 5, 2026
 
