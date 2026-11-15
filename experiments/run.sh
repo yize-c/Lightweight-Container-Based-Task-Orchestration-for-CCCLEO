@@ -32,6 +32,8 @@ netem_args() {
     d50)  echo "delay 50ms" ;;     # extra round-trip time, LEO-like
     d200) echo "delay 200ms" ;;
     d600) echo "delay 600ms" ;;    # GEO-satellite-like
+    d1000) echo "delay 1000ms" ;;
+    d1500) echo "delay 1500ms" ;;
     l1)   echo "loss 1%" ;;
     l5)   echo "loss 5%" ;;
     l10)  echo "loss 10%" ;;
@@ -110,8 +112,8 @@ for mode in $MODES; do
 
   curl -sf "$API/jobs"    > "results/$name.jobs.json"
   curl -sf "$API/metrics" > "results/$name.metrics.json"
-  printf '{"mode":"%s","profile":"%s","rep":%d,"netem":"%s","poll_ms":%d,"tick_ms":%d,"out_down_s":%d,"out_cycle_s":%d}\n' \
-    "$mode" "$profile" "$rep" "$args" "$POLL" "$TICK" "$OUT_DOWN" "$OUT_CYCLE" \
+  printf '{"mode":"%s","profile":"%s","rep":%d,"netem":"%s","poll_ms":%d,"tick_ms":%d,"out_down_s":%d,"out_cycle_s":%d,"gap_s":%d}\n' \
+    "$mode" "$profile" "$rep" "$args" "$POLL" "$TICK" "$OUT_DOWN" "$OUT_CYCLE" "$GAP" \
     > "results/$name.meta.json"
   echo "   $(cat "results/$name.metrics.json")"
 done; done; done

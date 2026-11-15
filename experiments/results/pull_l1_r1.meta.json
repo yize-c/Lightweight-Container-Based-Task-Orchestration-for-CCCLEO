@@ -1,0 +1,1 @@
+{"mode":"pull","profile":"l1","rep":1,"netem":"loss 1%","poll_ms":2000,"tick_ms":1000,"out_down_s":10,"out_cycle_s":40,"gap_s":4}

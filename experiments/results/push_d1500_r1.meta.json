@@ -1,0 +1,1 @@
+{"mode":"push","profile":"d1500","rep":1,"netem":"delay 1500ms","poll_ms":2000,"tick_ms":1000,"out_down_s":10,"out_cycle_s":40,"gap_s":8}

@@ -99,7 +99,8 @@ def model(profile, mode, meta):
             completion = 1 - max(0, X - PUSH_TIMEOUT_S) / Y
         else:
             sched += (X / Y) * (X / 2) * 1000
-    total = sched + R[mode] + D if R.get(mode) is not None else None
+    hops = 2 if mode == "push" else 1   # v2: push pays one extra link crossing
+    total = sched + R[mode] + hops * D if R.get(mode) is not None else None
     return sched, total, completion
 
 
@@ -118,7 +119,7 @@ def err(measured, predicted):
 order = ["base", "d50", "d200", "d600", "l1", "l5", "l10", "out"]
 keys = sorted(runs, key=lambda k: (order.index(k[0]) if k[0] in order else 99, k[1]))
 
-header = ["profile", "mode", "runs", "completion", "completion_model",
+header = ["profile", "mode", "runs", "gap_s", "completion", "completion_model",
           "sched_mean_ms", "sched_median_ms", "sched_model_ms", "sched_err",
           "total_mean_ms", "total_median_ms", "total_model_ms", "total_err"]
 rows = []
@@ -128,7 +129,8 @@ for key in keys:
     completion = sum(r["done"] for r in rs) / max(1, sum(r["n"] for r in rs))
     m_sched, m_total, m_comp = model(profile, mode, rs[0]["meta"])
     s_mean, t_mean = pooled(key, "sched"), pooled(key, "total")
-    rows.append([profile, mode, len(rs), fmt(completion, True), fmt(m_comp, True),
+    rows.append([profile, mode, len(rs), rs[0]["meta"].get("gap_s", "?"),
+                 fmt(completion, True), fmt(m_comp, True),
                  fmt(s_mean), fmt(median(key, "sched")), fmt(m_sched), err(s_mean, m_sched),
                  fmt(t_mean), fmt(median(key, "total")), fmt(m_total), err(t_mean, m_total)])
 
