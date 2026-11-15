@@ -54,6 +54,6 @@ Two methods, checked against each other:
 
 - **Nov 14** — Network emulation experiments done; the model predicted
   where pull catches up with push (~1 s of extra round-trip time), and
-  the experiment confirmed it. See [Midterm Update](docs/updates.md#update-3--nov-16-2026).
+  the experiment confirmed it. See [Midterm Update](docs/updates.md#midterm-update--nov-16-2026).
 - **Nov 2** — Controller/worker prototype working end to end.
 - **Oct 9** — [Project proposal](docs/proposal.md) submitted.
