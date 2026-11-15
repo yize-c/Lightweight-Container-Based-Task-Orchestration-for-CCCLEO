@@ -30,8 +30,8 @@
 - Wrote an analytical model, compared it with the measurements, and corrected it (push crosses the slow link one extra time)
 - Model predicted pull catches up with push at ~1 s extra RTT; confirmed at 1000 and 1500 ms
 - Found that pull overloads first at very high delay because each worker runs one job at a time
+- Repeated every run 3 times for final numbers; results held (tie at 1000 ms, pull faster at 1500 ms)
 
 **Next**
-- Repeat every run 3 times for final numbers
 - Project Update 3 (Nov 16)
 - Final presentation video (Dec 4), report (Dec 14), website final (Dec 21)
