@@ -52,5 +52,4 @@ Go, Docker, REST/HTTP, Linux `tc/netem`, K3s (baseline), Power BI
 **Changes from the original plan:** Azure IoT Hub and Jira were dropped to focus on the experiments; Docker containers replaced VMs for the emulated testbed; Power BI is now used for the result charts. Image caching and the K3s comparison are optional.
 
 **Priority if time is short:** the working prototype and push/pull
-experiments come first; hybrid scheduling, a web frontend and Power BI
-are optional.
+experiments come first; hybrid scheduling and a web frontend are optional.
